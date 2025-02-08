@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 346.8 77.2% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 346.8 77.2% 49.8%;
+    --secondary-foreground: 355.7 100% 97.3%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 346.8 77.2% 49.8%;
+    --radius: 1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Background animations */
+.animate-float {
+  position: fixed;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes float-1 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(10px, -10px) rotate(5deg);
+  }
+  50% {
+    transform: translate(0, -20px) rotate(0deg);
+  }
+  75% {
+    transform: translate(-10px, -10px) rotate(-5deg);
+  }
+}
+
+@keyframes float-2 {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(-15px, -15px) rotate(-10deg);
+  }
+  66% {
+    transform: translate(15px, -30px) rotate(10deg);
+  }
+}
+
+@keyframes float-3 {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.float-1 {
+  animation: float-1 6s ease-in-out infinite;
+}
+
+.float-2 {
+  animation: float-2 8s ease-in-out infinite;
+}
+
+.float-3 {
+  animation: float-3 15s linear infinite;
+}
+
+.bg-hearts::before {
+  content: "❤️";
+  @apply text-6xl; /* Increased to text-6xl */
+}
+
+.bg-roses::before {
+  content: "🌹";
+  @apply text-6xl; /* Increased to text-6xl */
+}
+
+.bg-chocolates::before {
+  content: "🍫";
+  @apply text-6xl; /* Increased to text-6xl */
+}
+
+.bg-love::before {
+  content: "💕";
+  @apply text-6xl; /* Increased to text-6xl */
+}
+
+@keyframes moveHearts {
+  from { background-position: 0 0; }
+  to { background-position: 100% 100%; }
+}
+
+.animated-bg {
+  background-image: url('/og-image.png'); /* Add a heart pattern image */
+  background-size: cover;
+  background-repeat: repeat;
+  animation: moveHearts 10s linear infinite;
+}
