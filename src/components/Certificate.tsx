@@ -21,7 +21,13 @@ import {
   SelectValue,
 } from "./ui/select";
 
-type Status = "committed" | "single" | "other";
+// Static imports of images from the public directory
+const boyGivingHeart = "/5.png"; // Not used as per instruction 1
+const girlReceivingHeart = "/6.png";
+const marriedCouple = "/mar.png";
+const singleImageFile = "/3.png"; // Renamed to avoid variable name conflict
+
+type Status = "committed" | "single" | "married";
 
 const committedQuotes = [
   "Together is a beautiful place to be ❤️",
@@ -39,13 +45,32 @@ const singleQuotes = [
   "Single but not available for nonsense 💅",
 ];
 
-const otherQuotes = [
-  "The best love stories are the ones we dare to dream 💭",
-  "Sometimes the best things in life take time ⏳",
-  "Love is patient, love is kind 💝",
-  "Hope is the heartbeat of love 💗",
-  "Every great love story starts with a first step 🌹",
+const marriedQuotes = [
+  "Happy Marriage Anniversary and Happy Valentine's Day! 🎉",
+  "Still the best decision I ever made. Happy Valentine's Day, my spouse! ❤️",
+  "To my partner in life and love, Happy Valentine's Day! 🥂",
+  "Our marriage is the sweetest love story. Happy Valentine's Day! 💖",
+  "Growing old together, hand in hand. Happy Valentine's Day! 🌹",
 ];
+
+const committedPoems = [
+  "In your arms, I've found my home,\nNever to roam, never alone.",
+  "Two hearts entwined, a perfect blend,\nOur journey of love, may it never end.",
+  "With every beat, my heart sings true,\nForever and always, I'm in love with you.",
+];
+
+const singlePoems = [
+  "My heart is free, my spirit light,\nCelebrating self, this Valentine's night.",
+  "In solitude, I find my strength,\nMy own love story, of infinite length.",
+  "Independent soul, with dreams untold,\nMy Valentine's gift, is to myself, bold.",
+];
+
+const marriedPoems = [
+  "Years have flown, our love's still new,\nEach Valentine's Day, I cherish you.",
+  "Through every season, hand in hand we stride,\nMy beloved spouse, my Valentine, my pride.",
+  "A lifetime of love, a bond so deep,\nIn your embrace, my heart to keep.",
+];
+
 
 const FloatingEmojis = () => {
   useEffect(() => {
@@ -105,25 +130,34 @@ export default function Certificate() {
   const [status, setStatus] = useState<Status | null>(null);
   const [yourName, setYourName] = useState("");
   const [partnerName, setPartnerName] = useState("");
-  const [otherDescription, setOtherDescription] = useState("");
   const [message, setMessage] = useState("");
   const [commitmentDate, setCommitmentDate] = useState("");
+  const [marriageDate, setMarriageDate] = useState("");
   const [selectedQuote, setSelectedQuote] = useState("");
   const [showShareOptions, setShowShareOptions] = useState(false);
+  const todayDate = new Date().toLocaleDateString();
+  const [singleImage, setSingleImage] = useState<string | null>(singleImageFile); // Initialize with the path from public
 
   const handleStatusChange = (newStatus: Status) => {
     setStatus(newStatus);
     setMessage("");
     setSelectedQuote("");
-    if (newStatus !== "committed") {
+    setSingleImage(null);
+    if (newStatus === 'single') {
+        setSingleImage(singleImageFile);
+    } else {
+        setSingleImage(null);
+    }
+    if (newStatus !== "committed" && newStatus !== "married") {
       setPartnerName("");
       setCommitmentDate("");
+      setMarriageDate("");
     }
   };
 
-  const calculateDays = () => {
-    if (!commitmentDate) return null;
-    const start = new Date(commitmentDate);
+  const calculateDays = (startDate: Date | null) => {
+    if (!startDate) return null;
+    const start = new Date(startDate);
     const today = new Date();
     const diffTime = Math.abs(today.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -139,11 +173,216 @@ export default function Certificate() {
   };
 
   const handleDownload = async () => {
-    const certificateElement = document.getElementById("certificate");
+    if (!yourName) {
+      toast({
+        title: "Error",
+        description: "Please enter your name to generate the certificate.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!status) {
+      toast({
+        title: "Error",
+        description: "Please select your status to generate the certificate.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if ((status === 'committed' || status === 'married') && !partnerName) {
+      toast({
+        title: "Error",
+        description: "Please enter your partner's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+     if (status === 'committed' && !commitmentDate) {
+      toast({
+        title: "Error",
+        description: "Please select your commitment date.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (status === 'married' && !marriageDate) {
+      toast({
+        title: "Error",
+        description: "Please select your marriage date.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (certificateElement) {
+    // Payment Check - Replace this with actual payment integration in real app
+    const paymentConfirmed = window.confirm("To download the certificate, please make a payment of ₹10 by scanning the QR code and then press OK. \n\n (This is a simulation. No actual payment is processed.) \n\n <QR Code Image Here - In real app, display QR code for ₹10 payment>");
+
+    if (!paymentConfirmed) {
+      toast({
+        title: "Download Cancelled",
+        description: "Payment is required to download the certificate.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+
+    const certificateElement = document.createElement('div');
+    certificateElement.id = "certificate-temp"; //temp id for html2canvas
+    certificateElement.className = "certificate-border certificate-bg-love p-8 text-center space-y-4 relative overflow-hidden";
+
+    // Stickers for Certificate
+    const stickerHeart = document.createElement('div');
+    stickerHeart.className = "sticker sticker-heart";
+    stickerHeart.style.top = '10px';
+    stickerHeart.style.left = '20px';
+    stickerHeart.innerText = '❤️';
+    certificateElement.appendChild(stickerHeart);
+
+    const stickerRose = document.createElement('div');
+    stickerRose.className = "sticker sticker-rose";
+    stickerRose.style.bottom = '20px';
+    stickerRose.style.right = '30px';
+    stickerRose.style.transform = 'rotate(-15deg)';
+    stickerRose.innerText = '🌹';
+    certificateElement.appendChild(stickerRose);
+
+    const stickerSparkle = document.createElement('div');
+    stickerSparkle.className = "sticker sticker-sparkle";
+    stickerSparkle.style.top = '50%';
+    stickerSparkle.style.right = '10px';
+    stickerSparkle.style.transform = 'translateY(-50%) rotate(25deg)';
+    stickerSparkle.innerText = '✨';
+    certificateElement.appendChild(stickerSparkle);
+
+
+    if (status === "committed") {
+        const imgCouple = document.createElement('img');
+        imgCouple.src = girlReceivingHeart;
+        imgCouple.alt = "Committed Couple";
+        imgCouple.className = "h-32 opacity-70"; // Reduced opacity to put image in background
+        const divCouple = document.createElement('div');
+        divCouple.className = "absolute top-1/4 left-1/2 transform -translate-x-1/2 certificate-image z-0"; // Centered and behind text
+        divCouple.appendChild(imgCouple);
+        certificateElement.appendChild(divCouple);
+
+
+    } else if (status === "married") {
+        const imgMarried = document.createElement('img');
+        imgMarried.src = marriedCouple;
+        imgMarried.alt = "Married Couple";
+        imgMarried.className = "h-40 opacity-70"; // Reduced opacity
+        const divMarried = document.createElement('div');
+        divMarried.className = "absolute top-1/4 left-1/2 transform -translate-x-1/2 certificate-image z-0"; // Centered and behind text
+        divMarried.appendChild(imgMarried);
+        certificateElement.appendChild(divMarried);
+    } else if (status === "single" && singleImage) {
+        const imgSingle = document.createElement('img');
+        imgSingle.src = singleImage;
+        imgSingle.alt = "Proudly Single";
+        imgSingle.className = "h-40 opacity-65"; // Reduced opacity
+        const divSingle = document.createElement('div');
+        divSingle.className = "absolute top-1/4 left-1/2 transform -translate-x-1/2 opacity-90 certificate-image z-0"; // Centered and behind text
+        divSingle.appendChild(imgSingle);
+        certificateElement.appendChild(divSingle);
+    }
+
+
+    const h2Title = document.createElement('h2');
+    h2Title.className = "text-3xl font-serif neon-text z-10 relative"; // Increased z-index for text
+    h2Title.innerText = "Valentine's Day 2025";
+    certificateElement.appendChild(h2Title);
+
+    const pCertifies = document.createElement('p');
+    pCertifies.className = "text-lg text-love-800 font-medium z-10 relative"; // Increased z-index for text
+    pCertifies.innerText = `Certificate of ${status === "married" ? "Marriage" : "Love"}`;
+    certificateElement.appendChild(pCertifies);
+
+    const pThisCertifies = document.createElement('p');
+    pThisCertifies.className = "text-love-800 z-10 relative"; // Increased z-index for text
+    pThisCertifies.innerText = "This certifies that";
+    certificateElement.appendChild(pThisCertifies);
+
+    const h3Names = document.createElement('h3');
+    h3Names.className = "text-xl font-bold neon-text z-10 relative"; // Increased z-index for text
+    h3Names.innerText = `${yourName} ${(status === "committed" || status === "married") && partnerName ? ` & ${partnerName}` : ''}`;
+    certificateElement.appendChild(h3Names);
+
+    const pStatusDetail = document.createElement('p');
+    pStatusDetail.className = "text-love-800 z-10 relative"; // Increased z-index for text
+    if (status === "committed") {
+        pStatusDetail.innerText = "are committed to each other";
+    } else if (status === "single") {
+        pStatusDetail.innerText = "is proudly single";
+    } else if (status === "married") {
+        pStatusDetail.innerText = "are happily married";
+    }
+    certificateElement.appendChild(pStatusDetail);
+
+    if (status === "committed" && commitmentDate) {
+        const pCommitmentDate = document.createElement('p');
+        pCommitmentDate.className = "text-love-700 z-10 relative"; // Increased z-index for text
+        pCommitmentDate.innerText = `Since ${new Date(commitmentDate).toLocaleDateString()}`;
+        certificateElement.appendChild(pCommitmentDate);
+
+        const pDaysOfLove = document.createElement('p');
+        pDaysOfLove.className = "text-love-700 font-bold z-10 relative"; // Increased z-index for text
+        pDaysOfLove.innerText = `${calculateDays(commitmentDate ? new Date(commitmentDate) : null)} days of love ❤️`;
+        certificateElement.appendChild(pDaysOfLove);
+    }
+
+    if (status === "married" && marriageDate) {
+        const pMarriageDate = document.createElement('p');
+        pMarriageDate.className = "text-love-700 z-10 relative"; // Increased z-index for text
+        pMarriageDate.innerText = `Since ${new Date(marriageDate).toLocaleDateString()}`;
+        certificateElement.appendChild(pMarriageDate);
+
+        const pYearsOfMarriage = document.createElement('p');
+        pYearsOfMarriage.className = "text-love-700 font-bold z-10 relative"; // Increased z-index for text
+        pYearsOfMarriage.innerText = `Celebrating years of marriage ❤️`;
+        certificateElement.appendChild(pYearsOfMarriage);
+    }
+
+    const pTodayDate = document.createElement('p');
+    pTodayDate.className = "text-love-700 z-10 relative"; // Increased z-index for text
+    pTodayDate.innerText = `Today's Date: ${todayDate}`;
+    certificateElement.appendChild(pTodayDate);
+
+
+    if (message) {
+        const pMessage = document.createElement('p');
+        pMessage.className = "italic text-love-700 mt-4 z-10 relative"; // Increased z-index for text
+        pMessage.innerText = `"${message}"`;
+        certificateElement.appendChild(pMessage);
+    }
+
+    const poemSection = document.createElement('div');
+    poemSection.className = "mt-4 poem-section text-love-700 z-10 relative"; // Increased z-index for text
+    const pPoemTitle = document.createElement('p');
+    pPoemTitle.className = "italic";
+    pPoemTitle.innerText = "Poem for you:";
+    poemSection.appendChild(pPoemTitle);
+    const pPoemText = document.createElement('p');
+    pPoemText.className = "poem-text";
+    pPoemText.innerText = getPoemByStatus();
+    poemSection.appendChild(pPoemText);
+    certificateElement.appendChild(poemSection);
+
+
+    const pWebsiteLink = document.createElement('p');
+    pWebsiteLink.className = "website-link absolute bottom-4 left-4 text-love-500 text-sm z-10 relative"; // Increased z-index for text
+    pWebsiteLink.innerText = "https://valentines-cert.vercel.app/"; // Replace with your website link
+    certificateElement.appendChild(pWebsiteLink);
+
+
+    document.body.appendChild(certificateElement); // Append to body to render it
+
+    const tempCertificateElement = document.getElementById("certificate-temp");
+
+
+    if (tempCertificateElement) {
       try {
-        const canvas = await html2canvas(certificateElement, {
+        const canvas = await html2canvas(tempCertificateElement, {
           scale: 2,
           useCORS: true,
           backgroundColor: "#fef0f9",
@@ -164,6 +403,8 @@ export default function Certificate() {
           description: "Could not download the certificate. Please try again.",
           variant: "destructive",
         });
+      } finally {
+        document.body.removeChild(tempCertificateElement); // Remove temp element after download
       }
     } else {
       toast({
@@ -181,22 +422,36 @@ export default function Certificate() {
         return committedQuotes;
       case "single":
         return singleQuotes;
-      case "other":
-        return otherQuotes;
+      case "married":
+        return marriedQuotes;
       default:
         return [];
     }
   };
 
+  const getPoemByStatus = () => {
+    switch (status) {
+      case "committed":
+        return committedPoems[Math.floor(Math.random() * committedPoems.length)];
+      case "single":
+        return singlePoems[Math.floor(Math.random() * singlePoems.length)];
+      case "married":
+        return marriedPoems[Math.floor(Math.random() * marriedPoems.length)];
+      default:
+        return "";
+    }
+  };
+
+
   const generateShareStatus = () => {
     let statusText = "";
-    const appLink = "[Your App Link Here]"; // Replace with your actual app link
+    const appLink = "https://valentines-cert.vercel.app/"; // Replace with your actual app link
     if (status === "committed") {
-      statusText = `I'm celebrating Valentine's Day with love, committed to ${partnerName} for ${calculateDays()} days! ❤️ Create your own certificate here: ${appLink}`;
+      statusText = `I'm celebrating Valentine's Day with love, committed to ${partnerName} for ${calculateDays(commitmentDate ? new Date(commitmentDate) : null)} days! ❤️ Create your own certificate here: ${appLink}`;
     } else if (status === "single") {
       statusText = "Happy Valentine's Day! I'm proudly single and loving it! 💪 Get your single certificate: ${appLink}";
-    } else if (status === "other") {
-      statusText = `It's Valentine's Day and I'm feeling the love in my ${otherDescription} journey! 💖 Make your certificate: ${appLink}`;
+    } else if (status === "married") {
+      statusText = `Celebrating Valentine's Day as happily married to ${partnerName} since ${new Date(marriageDate).toLocaleDateString()}! 💖 Make your certificate: ${appLink}`;
     }
     if (message) {
       statusText += ` My message: "${message}"`;
@@ -210,7 +465,7 @@ export default function Certificate() {
 
   const shareToSocialMedia = (platform: string) => {
     const statusText = generateShareStatus();
-    const appLink = "[Your App Link Here]"; // Ensure this is consistent
+    const appLink = "https://valentines-cert.vercel.app/"; // Ensure this is consistent
     let shareUrl = "";
 
     if (platform === "facebook") {
@@ -228,8 +483,17 @@ export default function Certificate() {
   };
 
 
+  const isDownloadEnabled = () => {
+    if (!yourName || !status) return false;
+    if ((status === 'committed' || status === 'married') && !partnerName) return false;
+    if (status === 'committed' && !commitmentDate) return false;
+    if (status === 'married' && !marriageDate) return false;
+    return true;
+  };
+
+
   return (
-    <div className="min-h-screen bg-[#e8219f] p-6 relative overflow-hidden text-white">
+    <div className="min-h-screen bg-[#e8219f] p-6 relative overflow-hidden text-white flex justify-center items-center">
       <FloatingEmojis />
       <FloatingElements />
 
@@ -249,7 +513,7 @@ export default function Certificate() {
 
       <div className="max-w-4xl mx-auto space-y-8 relative z-10 main-content">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold neon-text animate-slide-up">
+          <h1 className="text-3xl md:text-4xl font-bold neon-text animate-slide-up"> {/* Responsive font size */}
             Valentine's Week Certificate 2025
           </h1>
           <p className="text-love-200 animate-slide-up delay-100">
@@ -259,11 +523,11 @@ export default function Certificate() {
 
         {/* Valentine's Day 2025 Content Above Status */}
         <div className="text-center mb-8 animate-slide-up delay-200">
-          <h2 className="text-2xl font-semibold neon-text mb-2">
+          <h2 className="text-xl md:text-2xl font-semibold neon-text mb-2"> {/* Responsive font size */}
             Celebrate Love in 2025!
           </h2>
           <p className="text-love-100">
-            Design a unique certificate to share your Valentine's sentiment. Whether you're committed, single, or somewhere in between, express yourself this Valentine's Day!
+            Design a unique certificate to share your Valentine's sentiment. Whether you're committed, single, or married, express yourself this Valentine's Day!
           </p>
         </div>
 
@@ -274,7 +538,7 @@ export default function Certificate() {
             <CardDescription className="text-love-100">Select what best describes you</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex gap-4">
+            <div className="grid grid-cols-3 gap-4 sm:flex sm:gap-4"> {/* Responsive button layout */}
               <Button
                 variant={status === "committed" ? "default" : "glass"}
                 className="flex-1 hover:scale-105 transition-transform btn-glass"
@@ -290,11 +554,11 @@ export default function Certificate() {
                 Single
               </Button>
               <Button
-                variant={status === "other" ? "default" : "glass"}
+                variant={status === "married" ? "default" : "glass"}
                 className="flex-1 hover:scale-105 transition-transform btn-glass"
-                onClick={() => handleStatusChange("other")}
+                onClick={() => handleStatusChange("married")}
               >
-                Other
+                Married
               </Button>
             </div>
 
@@ -306,11 +570,11 @@ export default function Certificate() {
                     placeholder="Enter your name"
                     value={yourName}
                     onChange={(e) => setYourName(e.target.value)}
-                    className="form-control hover:border-love-400 transition-colors"
+                    className="form-control hover:border-love-400 transition-colors w-full" // Full width input
                   />
                 </div>
 
-                {status === "committed" && (
+                {(status === "committed" || status === "married") && (
                   <>
                     <div>
                       <Label className="form-label">Partner's Name</Label>
@@ -318,41 +582,44 @@ export default function Certificate() {
                         placeholder="Enter partner's name"
                         value={partnerName}
                         onChange={(e) => setPartnerName(e.target.value)}
-                        className="form-control hover:border-love-400 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <Label className="form-label">Commitment Date</Label>
-                      <Input
-                        type="date"
-                        value={commitmentDate}
-                        onChange={(e) => setCommitmentDate(e.target.value)}
-                        className="form-control hover:border-love-400 transition-colors"
+                        className="form-control hover:border-love-400 transition-colors w-full" // Full width input
                       />
                     </div>
                   </>
                 )}
-
-                {status === "other" && (
+                {status === "committed" && (
                   <div>
-                    <Label className="form-label">Describe Your Relationship</Label>
+                    <Label className="form-label">Commitment Date</Label>
                     <Input
-                      placeholder="One-sided love, Crush, etc."
-                      value={otherDescription}
-                      onChange={(e) => setOtherDescription(e.target.value)}
-                      className="form-control hover:border-love-400 transition-colors"
+                      type="date"
+                      value={commitmentDate}
+                      onChange={(e) => setCommitmentDate(e.target.value)}
+                      className="form-control hover:border-love-400 transition-colors w-full" // Full width input
                     />
                   </div>
                 )}
 
+                {status === "married" && (
+                  <div>
+                    <Label className="form-label">Marriage Date</Label>
+                    <Input
+                      type="date"
+                      value={marriageDate}
+                      onChange={(e) => setMarriageDate(e.target.value)}
+                      className="form-control hover:border-love-400 transition-colors w-full" // Full width input
+                    />
+                  </div>
+                )}
+
+
                 <div className="space-y-2">
                   <Label className="form-label">Choose a Quote (Optional)</Label>
-                  <div className="grid gap-2">
+                  <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-1"> {/* Responsive quote buttons */}
                     {getQuotesByStatus().map((quote, index) => (
                       <Button
                         key={index}
                         variant="glass"
-                        className="text-left hover:bg-love-50 transition-colors btn-glass"
+                        className="text-left hover:bg-love-50 transition-colors btn-glass quote-button" // Added class quote-button
                         onClick={() => handleQuoteSelect(quote)}
                       >
                         {quote}
@@ -367,83 +634,25 @@ export default function Certificate() {
                     placeholder="Write your message..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="h-24 form-control hover:border-love-400 transition-colors"
+                    className="h-24 form-control hover:border-love-400 transition-colors w-full" // Full width textarea
                   />
                 </div>
+                 <p className="text-sm text-love-100 mt-2 italic text-center">
+                    To download the certificate, a minimal payment of ₹10 is required. This helps support the app and prevent misuse. Thank you for your understanding!
+                 </p>
+                 <Button
+                    onClick={handleDownload}
+                    className="bg-love-600 hover:bg-love-700 hover:scale-105 transition-all btn-glass w-full mt-2"
+                    variant="glass"
+                    disabled={!isDownloadEnabled()}
+                  >
+                    Download Certificate (₹10)
+                  </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {status && (
-          <Card className="glass-card certificate-preview hover:scale-105 transition-transform duration-300">
-            <CardHeader>
-              <CardTitle className="text-love-50 neon-text">Your Certificate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div id="certificate" className="certificate-border certificate-bg-love p-8 text-center space-y-4 relative overflow-hidden">
-
-                {/* Stickers for Certificate */}
-                <div className="sticker sticker-heart" style={{ top: '10px', left: '20px' }}>❤️</div>
-                <div className="sticker sticker-rose" style={{ bottom: '20px', right: '30px', transform: 'rotate(-15deg)' }}>🌹</div>
-                <div className="sticker sticker-sparkle" style={{ top: '50%', right: '10px', transform: 'translateY(-50%) rotate(25deg)' }}>✨</div>
-
-
-                {status === "committed" && (
-                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-hearts opacity-20 rotate-12" style={{ width: '80px', height: '80px' }} />
-                )}
-                {status === "single" && (
-                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-love opacity-20 rotate-12" style={{ width: '80px', height: '80px' }} />
-                )}
-                <h2 className="text-3xl font-serif neon-text">
-                  Valentine's Day 2025
-                </h2>
-                <p className="text-lg text-love-800 font-medium">
-                  Certificate of Love
-                </p>
-                <p className="text-love-800">This certifies that</p>
-                <h3 className="text-xl font-bold neon-text">
-                  {yourName}
-                  {status === "committed" && partnerName && ` & ${partnerName}`}
-                </h3>
-                <p className="text-love-800">
-                  {status === "committed" && "are committed to each other"}
-                  {status === "single" && "is proudly single"}
-                  {status === "other" &&
-                    otherDescription &&
-                    `is in ${otherDescription}`}
-                </p>
-                {status === "committed" && commitmentDate && (
-                  <>
-                    <p className="text-love-700">
-                      Since {new Date(commitmentDate).toLocaleDateString()}
-                    </p>
-                    <p className="text-love-700 font-bold">
-                      {calculateDays()} days of love ❤️
-                    </p>
-                  </>
-                )}
-                {message && (
-                  <p className="italic text-love-700 mt-4">"{message}"</p>
-                )}
-
-                {/* QR Code Section */}
-                <div className="mt-8 border-t border-love-200 pt-4">
-                  <p className="text-sm text-love-700 mb-2">Support Our Love Project</p>
-                  <div className="flex justify-center items-center space-x-4">
-                    <div className="bg-white/10 p-4 rounded-lg shadow-md backdrop-blur-lg">
-                      <img src="/QR.png" alt="QR Code" className="w-24 h-24 rounded-lg" />
-                    </div>
-                    <div className="text-left text-sm text-love-700">
-                      <p>Scan to contribute</p>
-                      <p>Share love & support</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
       <div className="text-center mt-8 supporting-section">
         <div className="bg-white/10 p-4 rounded-lg shadow-md backdrop-blur-lg inline-block">
@@ -454,9 +663,8 @@ export default function Certificate() {
           💖 Love this certificate creator? Let’s spread more love together! ❤️
         </p>
 
-        <p className="text-sm text-love-100 mt-2"><strong>
+        <p className="text-sm text-love-100 mt-2">
           This is our **first-ever community project**, and we’re beyond excited to share it with you! If you’re looking for a **unique way to surprise your partner or someone special**, this is your chance to make the moment unforgettable! 🎁✨
-        </strong>
         </p>
 
         <p className="text-sm text-love-100 mt-4">
@@ -478,44 +686,35 @@ export default function Certificate() {
         <p className="text-sm text-love-100 mt-4">
           **Every little support means the world to us!** Let’s continue to make magic together. 💕
         </p>
+        <p className="text-sm text-love-100 mt-4 font-semibold">
+            🙏 Please don't misuse this app. It's made with love for Valentine's Day. ❤️
+        </p>
       </div>
 
 
         {status && (
-          <div className="flex justify-center gap-4 animate-slide-up delay-400 mt-8">
-            <Button
-              onClick={handleDownload}
-              className="bg-love-600 hover:bg-love-700 hover:scale-105 transition-all btn-glass"
-              variant="glass"
-            >
-              Download Certificate
-            </Button>
-             <Button
-              className="bg-love-600 hover:bg-love-700 hover:scale-105 transition-all btn-glass relative"
-              variant="glass"
-              onClick={handleShareStatusClick}
-            >
-              Share as Status
-            </Button>
+          <div className="flex justify-center gap-4 animate-slide-up delay-400 mt-8 flex-wrap"> {/* Responsive share buttons */}
 
-            {showShareOptions && (
-              <div className="absolute bottom-full left-0 mb-2 bg-white shadow-xl rounded-md p-4 z-10">
-                <Button variant="ghost" className="block w-full text-left hover:bg-love-50 rounded-md flex items-center gap-2" onClick={() => shareToSocialMedia('twitter')}>
+
+             <div className="flex gap-2 flex-wrap justify-center"> {/* Wrapped buttons for smaller screens */}
+                <Button variant="glass" className="btn-glass hover:bg-love-50 rounded-md flex items-center gap-2 mb-2" onClick={() => shareToSocialMedia('facebook')}> {/* Added mb-2 for spacing */}
+                  <FaFacebook /> Facebook
+                </Button>
+                <Button variant="glass" className="btn-glass hover:bg-love-50 rounded-md flex items-center gap-2 mb-2" onClick={() => shareToSocialMedia('twitter')}> {/* Added mb-2 for spacing */}
                   <FaTwitter /> Twitter
                 </Button>
-                <Button variant="ghost" className="block w-full text-left hover:bg-love-50 rounded-md flex items-center gap-2" onClick={() => shareToSocialMedia('whatsapp')}>
+                <Button variant="glass" className="btn-glass hover:bg-love-50 rounded-md flex items-center gap-2 mb-2" onClick={() => shareToSocialMedia('whatsapp')}> {/* Added mb-2 for spacing */}
                   <FaWhatsapp /> WhatsApp
                 </Button>
-                <Button variant="ghost" className="block w-full text-left hover:bg-love-50 rounded-md flex items-center gap-2" onClick={() => shareToSocialMedia('linkedin')}>
+                <Button variant="glass" className="btn-glass hover:bg-love-50 rounded-md flex items-center gap-2 mb-2" onClick={() => shareToSocialMedia('linkedin')}> {/* Added mb-2 for spacing */}
                   <FaLinkedin /> LinkedIn
                 </Button>
               </div>
-            )}
           </div>
         )}
       </div>
 
-      <style jsx>{`
+      <style jsx global>{`
          body {
             overflow-x: hidden;
          }
@@ -611,7 +810,11 @@ export default function Certificate() {
         .main-content {
             position: relative;
             z-index: 1;
-            padding: 2rem;
+            padding: 1.5rem; /* Reduced padding for better responsiveness */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center content horizontally */
         }
 
         .glass-card {
@@ -619,15 +822,22 @@ export default function Certificate() {
             backdrop-filter: blur(10px);
             border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 2rem;
-            margin: 4rem 0;
+            padding: 1.5rem; /* Reduced padding for better responsiveness */
+            margin-bottom: 1.5rem; /* Reduced margin for better responsiveness */
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%; /* Make card responsive */
+            max-width: 600px; /* Limit card width if needed */
         }
 
         .glass-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(255, 117, 140, 0.2);
         }
+
+        .card > .card-content {
+            padding: 1.5rem; /* Ensure card content padding is also responsive */
+        }
+
 
         .form-control, .form-select {
             background: rgba(255, 255, 255, 0.1);
@@ -666,16 +876,21 @@ export default function Certificate() {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 15px;
-            padding: 2rem;
+            padding: 1.5rem;
             color: #fff;
             backdrop-filter: blur(10px);
             position: relative;
+            display: none;
         }
 
         .certificate-border {
             border: 5px solid rgba(255, 117, 140, 0.8);
-            padding: 1rem;
+            padding: 0.8rem;
             background-color: #fef0f9;
+            width: 90%; /* Responsive certificate width */
+            max-width: 500px; /* Maximum certificate width */
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .certificate-bg-love {
@@ -688,6 +903,26 @@ export default function Certificate() {
             text-shadow: 0 0 10px rgba(255, 117, 140, 0.8),
                          0 0 20px rgba(255, 117, 140, 0.8),
                          0 0 30px rgba(255, 117, 140, 0.8);
+        }
+
+        h1.neon-text {
+            font-size: 2rem; /* Adjusted base font size */
+        }
+
+        h2.neon-text {
+            font-size: 1.7rem; /* Adjusted base font size */
+        }
+
+        h3.neon-text {
+            font-size: 1.3rem; /* Adjusted base font size */
+        }
+
+        .certificate-image {
+            max-width: 80%; /* Responsive image size */
+            height: auto;
+            display: block; /* Prevent extra space below image */
+            margin-left: auto;
+            margin-right: auto;
         }
 
 
@@ -707,27 +942,82 @@ export default function Certificate() {
 
         .supporting-section {
             text-align: center;
-            margin-top: 4rem;
-            padding: 2rem;
+            margin-top: 1.5rem; /* Reduced margin for better responsiveness */
+            padding: 1rem;
         }
 
         .sticker {
             position: absolute;
-            font-size: 2em; /* Adjust size as needed */
-            opacity: 0.8; /* Adjust opacity if needed */
-            pointer-events: none; /* Make sure stickers don't interfere with clicks */
+            font-size: 1.2em; /* Adjusted sticker base size */
+            opacity: 0.8;
+            pointer-events: none;
         }
 
         .sticker-heart {
-            font-size: 3em;
+            font-size: 2em;
         }
 
         .sticker-rose {
-            font-size: 2.5em;
+            font-size: 1.8em;
         }
 
         .sticker-sparkle {
-            font-size: 2em;
+            font-size: 1.2em;
+        }
+
+        .poem-section {
+            margin-top: 1rem;
+            font-size: 0.8rem; /* Adjusted poem font size */
+            white-space: pre-line;
+        }
+
+        .website-link {
+
+        }
+
+        /* Added style for quote buttons to enable text wrapping */
+        .quote-button {
+            white-space: normal;
+            word-wrap: break-word;
+            text-align: left; /* Keep text left-aligned within the button */
+        }
+
+
+        /* Media Queries for Responsiveness */
+        @media (min-width: 768px) { /* Tablets and larger */
+            h1.neon-text {
+                font-size: 2.5rem; /* Larger font size for tablets and desktops */
+            }
+            h2.neon-text {
+                font-size: 2rem; /* Larger font size for tablets and desktops */
+            }
+            h3.neon-text {
+                font-size: 1.5rem; /* Larger font size for tablets and desktops */
+            }
+            .glass-card {
+                padding: 2rem; /* Larger padding for tablets and desktops */
+                margin-bottom: 2rem; /* Larger margin for tablets and desktops */
+            }
+            .card > .card-content {
+                 padding: 2rem; /* Larger card content padding for tablets and desktops */
+            }
+            .sticker {
+                font-size: 1.5em; /* Larger sticker size for tablets and desktops */
+            }
+            .sticker-heart {
+                font-size: 2.5em;
+            }
+
+            .sticker-rose {
+                font-size: 2em;
+            }
+
+            .sticker-sparkle {
+                font-size: 1.5em;
+            }
+            .poem-section {
+                font-size: 0.9rem; /* Larger poem font size for tablets and desktops */
+            }
         }
 
 
